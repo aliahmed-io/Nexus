@@ -17,7 +17,14 @@ export async function Navbar() {
   const { getUser } = getKindeServerSession();
   const user = await getUser();
 
-  const cart: Cart | null = await redis.get(`cart-${user?.id}`);
+  let cart: Cart | null = null;
+  if (user?.id && redis) {
+    try {
+      cart = (await redis.get<Cart>(`cart-${user.id}`)) as Cart | null;
+    } catch {
+      cart = null;
+    }
+  }
 
   const total = cart?.items.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
