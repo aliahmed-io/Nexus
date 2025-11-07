@@ -161,7 +161,10 @@ export async function addItem(productId: string) {
     return redirect("/");
   }
 
-  const cart: Cart | null = await redis.get(`cart-${user.id}`);
+  let cart: Cart | null = null;
+  if (redis) {
+    cart = (await redis.get<Cart>(`cart-${user.id}`)) as Cart | null;
+  }
 
   const selectedProduct = await prisma.product.findUnique({
     select: {
@@ -216,7 +219,9 @@ export async function addItem(productId: string) {
     }
   }
 
-  await redis.set(`cart-${user.id}`, myCart);
+  if (redis) {
+    await redis.set(`cart-${user.id}`, myCart);
+  }
 
   revalidatePath("/", "layout");
 }
@@ -231,7 +236,9 @@ export async function delItem(formData: FormData) {
 
   const productId = formData.get("productId");
 
-  const cart: Cart | null = await redis.get(`cart-${user.id}`);
+  const cart: Cart | null = redis
+    ? ((await redis.get<Cart>(`cart-${user.id}`)) as Cart | null)
+    : null;
 
   if (cart && cart.items) {
     const updateCart: Cart = {
@@ -239,7 +246,9 @@ export async function delItem(formData: FormData) {
       items: cart.items.filter((item) => item.id !== productId),
     };
 
-    await redis.set(`cart-${user.id}`, updateCart);
+    if (redis) {
+      await redis.set(`cart-${user.id}`, updateCart);
+    }
   }
 
   revalidatePath("/bag");
@@ -253,6 +262,8 @@ export async function checkOut() {
     return redirect("/");
   }
 
-  const cart: Cart | null = await redis.get(`cart-${user.id}`);
+  const cart: Cart | null = redis
+    ? ((await redis.get<Cart>(`cart-${user.id}`)) as Cart | null)
+    : null;
 
 }

@@ -20,7 +20,14 @@ export default async function BagRoute() {
     redirect("/");
   }
 
-  const cart: Cart | null = await redis.get(`cart-${user.id}`);
+  let cart: Cart | null = null;
+  if (redis) {
+    try {
+      cart = (await redis.get<Cart>(`cart-${user.id}`)) as Cart | null;
+    } catch {
+      cart = null;
+    }
+  }
 
   let totalPrice = 0;
 
